@@ -15,11 +15,15 @@ import LibraryTable, { LIBRARY_VIEWS, SuggestionBanner, type LibraryView } from 
 import DoaSection, { DoaHeaderLinks } from './DoaSection';
 import SuggestAssignmentDialog from './SuggestAssignmentDialog';
 import TrainingGapsDialog from './TrainingGapsDialog';
+// The authoring modal, vendored from the prototype that owns it — see
+// src/authoring/README.md. It renders OVER this page, so the study profile
+// stays behind it and closing it simply puts the page back.
+import AICourseAuthoringFlow from './authoring/AICourseAuthoringFlow';
 import { COURSE_COUNT } from './coursesData';
 import { SITE_COUNT } from './sitesData';
 import { peopleNotEnrolled, sitesWithGaps } from './personnelData';
-import { COURSE_TOTAL, PLAN_TOTAL, LIBRARY_COURSES, type LibraryItem } from './libraryData';
-import { siteUrl, userUrl, authoringUrl, siteNumberOf, go } from './links';
+import { COURSE_TOTAL, PLAN_TOTAL, LIBRARY_COURSES, draftCourse, type LibraryItem } from './libraryData';
+import { siteUrl, userUrl, siteNumberOf, go } from './links';
 import { color, type, tree, page, subNav, pageHeader, sysMsg, icon, button as btn } from './tokens';
 
 // The STUDY profile — the study's own screen, its own app and its own repo.
@@ -44,10 +48,9 @@ export function StudyProfilePage() {
   const [librarySelected, setLibrarySelected] = useState(0);
   const [libraryView, setLibraryView] = useState<LibraryView>('Courses');
 
-  // A course authored in the authoring app is created in THIS study's library,
-  // so the listing's rows live here rather than being read straight from the
-  // module. (The authoring app is a separate app now, so it returns here by
-  // URL rather than closing an overlay.)
+  const [aiAuthoring, setAiAuthoring] = useState(false);
+  // A course authored in that modal is created in THIS study's library, so the
+  // listing's rows live here rather than being read straight from the module.
   const [courses, setCourses] = useState<LibraryItem[]>(LIBRARY_COURSES);
   const [suggesting, setSuggesting] = useState(false);
   const [showingGaps, setShowingGaps] = useState(false);
@@ -204,12 +207,12 @@ export function StudyProfilePage() {
                     </div>
                   )}
 
-                  <DoaSection />
+                  <DoaSection onDraft={() => setAiAuthoring(true)} />
                 </>
               ) : isLibrary ? (
                 <>
                   <TrainingToolbar
-                    {...libraryActions(librarySelected > 0, libraryView, () => go(authoringUrl()))}
+                    {...libraryActions(librarySelected > 0, libraryView, () => setAiAuthoring(true))}
                     searchPlaceholder={libraryView === 'Courses' ? 'Search courses' : 'Search learning plans'}
                   />
                   <FilterRow filters={LIBRARY_FILTERS} />
@@ -316,6 +319,22 @@ export function StudyProfilePage() {
         />
       )}
 
+      {aiAuthoring && (
+        <AICourseAuthoringFlow
+          initialSourceDoc={null}
+          onClose={() => setAiAuthoring(false)}
+          onCourseSaved={draft => {
+            // The course is created in this study's Training Library, as a
+            // draft at the top of the listing, and the view switches to it so
+            // the new row is what the modal closes onto.
+            setCourses(prev => [draftCourse(draft.title, prev), ...prev]);
+            setSection('training-library');
+            setLibraryView('Courses');
+            setLibrarySelected(0);
+            setAiAuthoring(false);
+          }}
+        />
+      )}
     </div>
   );
 }

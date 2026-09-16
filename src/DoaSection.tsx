@@ -22,7 +22,6 @@ import {
   etmfUrlForSite,
   etmfDocUrlForSite,
   ETMF_URL,
-  AI_AUTHORING_URL,
 } from './doaData';
 import { notEnrolledFor } from './personnelData';
 import { HEAD, CELL, SortableHeader, Chip, Pagination, TableSurface } from './tableKit';
@@ -351,7 +350,7 @@ function TrainedBar({ duty, siteLevel }: { duty: Duty; siteLevel: boolean }) {
  * The proposal a gap row carries instead of a status: the course the study's
  * own documents would produce, routed into the AI course authoring flow.
  */
-function SuggestionCell({ duty }: { duty: Duty }) {
+function SuggestionCell({ duty, onDraft }: { duty: Duty; onDraft?: () => void }) {
   const s = duty.suggestion;
   if (!s) return null;
   return (
@@ -366,11 +365,11 @@ function SuggestionCell({ duty }: { duty: Duty }) {
         from {s.source}
       </span>
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-        <a
-          // Same tab, and carrying where to come back to: closing the authoring
-          // modal returns here rather than stranding the visitor in the
-          // content library behind it.
-          href={`${AI_AUTHORING_URL}&from=${encodeURIComponent(window.location.href)}`}
+        <button
+          type="button"
+          // The authoring modal opens OVER this page — the study profile stays
+          // behind it — rather than sending the visitor to another app.
+          onClick={onDraft}
           title={`Draft "${s.course}" in AI course authoring, from ${s.source}`}
           style={{
             display: 'inline-flex',
@@ -388,7 +387,7 @@ function SuggestionCell({ duty }: { duty: Duty }) {
         >
           <FontAwesomeIcon icon={faWandMagicSparkles} style={{ width: 11, height: 11 }} />
           Draft course
-        </a>
+        </button>
         <button
           type="button"
           style={{
@@ -640,7 +639,7 @@ function MappingDialog({
   );
 }
 
-function Row({ duty, onConfigure, readOnly }: { duty: Duty; onConfigure: () => void; readOnly: boolean }) {
+function Row({ duty, onConfigure, readOnly, onDraft }: { duty: Duty; onConfigure: () => void; readOnly: boolean; onDraft?: () => void }) {
   const [hover, setHover] = useState(false);
 
   return (
@@ -686,7 +685,7 @@ function Row({ duty, onConfigure, readOnly }: { duty: Duty; onConfigure: () => v
           // rather than offering an action it should not own.
           null
         ) : (
-          <SuggestionCell duty={duty} />
+          <SuggestionCell duty={duty} onDraft={onDraft} />
         )}
       </td>
 
@@ -698,7 +697,7 @@ function Row({ duty, onConfigure, readOnly }: { duty: Duty; onConfigure: () => v
   );
 }
 
-export function DoaSection({ site }: { site?: string }) {
+export function DoaSection({ site, onDraft }: { site?: string; /** Opens the authoring modal for an unmapped duty. */ onDraft?: () => void }) {
   // Duty → course mapping is a STUDY decision: one catalogue, one mapping,
   // applied everywhere. A site profile reads the result of it — which courses
   // qualify each delegated duty, and how far its people have got — so nothing
@@ -769,7 +768,7 @@ export function DoaSection({ site }: { site?: string }) {
             </thead>
             <tbody>
               {rows.map(duty => (
-                <Row key={duty.no} duty={duty} readOnly={readOnly} onConfigure={() => setConfiguring(duty.no)} />
+                <Row key={duty.no} duty={duty} readOnly={readOnly} onDraft={onDraft} onConfigure={() => setConfiguring(duty.no)} />
               ))}
             </tbody>
           </table>
