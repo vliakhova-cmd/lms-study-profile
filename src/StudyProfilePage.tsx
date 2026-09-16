@@ -10,6 +10,7 @@ import TrainingToolbar, { trainingPlansActions, sitesActions, doaActions, librar
 import FilterRow, { TRAINING_PLANS_FILTERS, SITES_FILTERS, DOA_FILTERS, LIBRARY_FILTERS } from './FilterRow';
 import ViewTabs from './ViewTabs';
 import CourseTable from './CourseTable';
+import StudyGeneralInfo from './StudyGeneralInfo';
 import SitesTable from './SitesTable';
 import LibraryTable, { LIBRARY_VIEWS, SuggestionBanner, type LibraryView } from './LibraryTable';
 import DoaSection, { DoaHeaderLinks } from './DoaSection';
@@ -65,6 +66,7 @@ export function StudyProfilePage() {
   const isDoa = section === 'doa';
   const isLibrary = section === 'training-library';
   const isPlans = section === 'training-plans';
+  const isInfo = section === 'general-info';
 
   return (
     <div
@@ -156,7 +158,9 @@ export function StudyProfilePage() {
                 minHeight: 0,
               }}
             >
-              {isDoa ? (
+              {isInfo ? (
+                <StudyGeneralInfo />
+              ) : isDoa ? (
                 <>
                   <TrainingToolbar {...doaActions(false, false)} searchPlaceholder="Search duties" />
                   <FilterRow filters={DOA_FILTERS} />
